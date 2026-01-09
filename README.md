@@ -118,7 +118,7 @@ This helps prevent:
 
 IDEasy is a hobbyist and experimental project. You should be aware that:
 
-* Performance is significantly slower than modern USB to IDE bridges.  We're working over USB 1.1 protocol for now.
+* Performance is significantly slower than modern USB to IDE bridges.  We're working over USB 1.1 for now.  This can cause long mount times, especially in Windows if the disk has logical weirdness.
 * Many legacy disks use unusual geometry, and may require experimentation.
 * Not all OS disk utilities behave the same way
 
