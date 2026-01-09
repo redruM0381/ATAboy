@@ -44,6 +44,34 @@ To get started, you will also need:
 
 ## Serial Console Access
 
+```
+         IDEasy Setup Utility V 0.4 - Copyright (C) 2026 Obsolete Tech
+╔══════════════════════════════════════╤═══════════════════════════════════════╗
+║                                      │                                       ║
+║                                      │                                       ║
+║                                      │                                       ║
+║   ► IDEasy Features Setup            │     Auto Detect & Set Geometry        ║
+║                                      │                                       ║
+║     Mount HDD to USB Mass Storage    │     Load Setup Defaults               ║
+║                                      │                                       ║
+║     Send RESET to HDD                │     Save Setup to EEPROM              ║
+║                                      │                                       ║
+║                                      │                                       ║
+║                                      │                                       ║
+║                                      │                                       ║
+║                                      │                                       ║
+║                                      │                                       ║
+║                                      │                                       ║
+╟──────────────────────────────────────┴───────────────────────────────────────╢
+║  ESC: Quit to Main Menu                         ↑ ↓ → ←: Select Item         ║
+║  F10: Save Current Setup to EEPROM               Enter: Select               ║
+╟──────────────────────────────────────────────────────────────────────────────╢
+║                         Current HDD: IBM-H2344-A4                            ║
+║                 Current Geometry: 915 Cyl / 15 Hd / 49 SPT                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+```
+
 IDEasy exposes a USB serial console UI used to configure the drive, change system settings, mount the drive, etc.
 After connecting IDEasy via USB, first find the new serial port:
 
