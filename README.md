@@ -1,12 +1,12 @@
 ```
-  _____ _____  ______                      
- |_   _|  __ \|  ____|                     
-   | | | |  | | |__   __ _ ___ _   _       
-   | | | |  | |  __| / _` / __| | | |      
-  _| |_| |__| | |___| (_| \__ \ |_| |      
- |_____|_____/|______\__,_|___/\__, |      
-                                __/ |      
-                               |___/
+                                          _____ _____  ______                      
+                                         |_   _|  __ \|  ____|                     
+                                           | | | |  | | |__   __ _ ___ _   _       
+                                           | | | |  | |  __| / _` / __| | | |      
+                                          _| |_| |__| | |___| (_| \__ \ |_| |      
+                                         |_____|_____/|______\__,_|___/\__, |      by JJ Dasher
+                                                                        __/ |      
+                                                                       |___/
 ```
 IDEasy is designed for retro computing enthusiasts, data recovery experts, and archivists.  Read and write the oldest of IDE hard drives, without the need for an "in-between" vintage computer!
 
