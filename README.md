@@ -54,7 +54,8 @@ From here, it is mostly self explanitory.  Enter the auto-detection and geometry
 Once geometry is set, you may mount the drive, and it should appear in your host OS.
 If you like, you can save the current settings and geometry to EEPROM, which will be restored the next time the device is connected.  (This allows auto-mounting also.)
 
-IMPORTANT!  If you are working with valuable or irreplaceable data, enable write protection before mounting.  It is enabled by default for safety.  You do NOT want the host OS to touch or bless the disk!
+#  IMPORTANT!
+If you are working with valuable or irreplaceable data, enable write protection before mounting.  It is enabled by default for safety.  You do NOT want the host OS to touch or bless the disk!
 Windows VDS/RPC services can often crash if it is unable to write to a drive with damaged/legacy MBR and/or partition tables.
 This can result in various Windows errors, unable to mount the drive, etc.  However, raw data can usually still be accessed via dd, or other raw disk backup software.
 Regardless, it is STRONGLY recommended the entire drive be dumped to an image file BEFORE disabling write protection, and mounting the drive in Explorer.
