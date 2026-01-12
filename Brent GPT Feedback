@@ -1,0 +1,98 @@
+Yep — I went back through the repo code (full files, not just the first snippet) and **several parts of my earlier feedback were wrong because I only had partial context at the time**. Here’s the corrected record.
+
+## Corrections to my earlier feedback
+
+### 1) “No timeout / retry logic yet” — **Incorrect**
+
+There *is* timeout logic in multiple places:
+
+* **`ide_wait_until_ready(timeout_ms)`**: polls `STATUS` with a millisecond timeout and calls `tud_task()` while waiting.
+* **`wait_for_drive_ready(timeout_ms)`**: waits for `BSY` to clear and `DRDY` to assert with timeout.
+* **`ide_get_identify_data()`**: has a `timeout` loop waiting for DRQ, delays, and periodically calls `tud_task()`.
+
+So the firmware already has the essential “don’t hang forever if the drive misbehaves” protections.
+
+### 2) “No drive detection / IDENTIFY sequence seen” — **Incorrect**
+
+`IDENTIFY DEVICE` is implemented and used:
+
+* **`ide_identify_drive()`** issues `0xEC`.
+* **`ide_get_identify_data(uint16_t* buffer)`** reads the 512-byte identify data and has readiness / DRQ timing logic.
+
+And the USB MSC layer explicitly uses identify-derived capacity in LBA mode:
+
+* `tud_msc_capacity_cb()` uses `total_lba_sectors_from_identify` when `use_lba_mode` is set.
+
+Your friend is right here.
+
+### 3) “Reset pin defined but not used” — **Incorrect**
+
+Reset is implemented and wired into the menu flow:
+
+* **`ide_reset_drive()`** drives `IDE_RESET` low, delays, then high again with additional delay.
+* The menu confirm handler calls `ide_reset_drive()` and clears geometry / detection state afterward.
+
+So the reset behavior is real and exposed in UI.
+
+### 4) “No SCSI sense code reporting” — **Partly incorrect**
+
+The firmware **does** implement `tud_msc_scsi_cb()` and uses `tud_msc_set_sense()` at least for:
+
+* **UNIT ATTENTION** (media change)
+* **ILLEGAL REQUEST** (unsupported SCSI opcode)
+
+What’s still *mostly true* is: **read/write path failures** (READ10/WRITE10 callbacks) generally return error without setting a detailed sense code for “medium error” vs “hardware error”, etc. That’s an improvement opportunity, but I was wrong to imply sense codes weren’t used at all.
+
+### 5) “No debug view / logging” — **Overstated**
+
+`menus.c` contains a fairly extensive debug UI scaffolding (including ATA string decode helpers), and your friend notes IDENTIFY is shown there. My earlier comment was based on not having reviewed the later debug-screen sections yet.
+
+## Things I said that still stand (and why)
+
+### A) **Read-cache invalidation after writes is still missing**
+
+There is an `ide_flush_cache()` function (invalidate read cache). It’s used when mounting via the menu (good), but:
+
+* **`tud_msc_write10_cb()` does not call `ide_flush_cache()`**
+* **`tud_msc_scsi_cb()` returns 0 for `SYNCHRONIZE CACHE` without invalidating the read cache**
+
+That means: write a sector → immediately read same LBA → you can potentially get stale data from the read cache.
+
+**Minimal safe fix:**
+
+* call `ide_flush_cache()` after any successful write, *or* at least invalidate if the written LBA overlaps the cached region.
+
+### B) Optional but worthwhile: implement ATA cache flush on sync/unmount
+
+There is `ide_flush_cache_ext()` which issues **ATA FLUSH CACHE EXT (0xEA)** and waits ready. That’s for drive internal write cache (not your RAM read cache).
+
+Right now, SCSI **SYNCHRONIZE CACHE** is treated as a no-op. If you want “USB disk semantics” to be safer, a good pattern is:
+
+* On SCSI `SYNCHRONIZE CACHE`:
+
+  * invalidate read cache (`ide_flush_cache()`), and
+  * if in LBA48 mode and drive supports it, issue `ide_flush_cache_ext()` (or also implement non-EXT `0xE7` for LBA28-era drives).
+
+This matters if someone does writes and then yanks power quickly.
+
+### C) Flash config: my “add magic/version” note was outdated
+
+They already have:
+
+* `config.magic == 0x1DE45701` validation
+* multicore lockout + IRQ disable around erase/program (good!)
+
+The *wear reduction* suggestion still applies as a “nice to have”:
+
+* only write flash if config changed vs what’s already stored.
+
+## Bottom line
+
+Your friend is correct: **IDENTIFY + detection + reset + timeouts exist**, and my earlier notes suggesting otherwise were wrong due to partial-file review.
+
+The main “real” firmware-level improvement I’d push next is:
+
+1. **invalidate read cache after WRITE10**, and
+2. optionally **do ATA FLUSH CACHE on SCSI SYNCHRONIZE CACHE / unmount** (especially if write support is intended to be reliable).
+
+If you want, I can point you to the exact places to insert those calls (function + location), or generate a clean unified diff patch.
