@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
+#include <math.h>
 #include "stdlib.h"
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
@@ -10,6 +12,7 @@
 #include "class/cdc/cdc_device.h"
 #include "ide_logic.h"
 
+
 /* --- Externs from ide_logic.cpp --- */
 #ifdef __cplusplus
 extern "C" {
@@ -17,10 +20,15 @@ extern "C" {
     void ide_hw_init(void);
     void ide_reset_drive(void);
     void ide_identify_drive(void);
+    void ide_flush_cache(void);
     bool ide_get_identify_data(uint16_t* buffer);
     bool ide_wait_until_ready(uint32_t timeout_ms);
     void get_large_geometry(uint16_t native_cyl, uint8_t native_head, uint8_t native_spt, uint16_t* l_cyl, uint8_t* l_head);
     bool ide_set_geometry(uint8_t heads, uint8_t spt);
+    void ide_write_8(uint8_t reg, uint8_t val);
+    uint8_t ide_read_8(uint8_t reg);
+    void ide_get_task_file(uint8_t* task_file);
+    
     
     // Globals for USB sync
     extern uint8_t  drive_heads;
@@ -47,6 +55,7 @@ typedef struct {
     bool drive_write_protected;
     bool auto_mount;
     bool iordy_pin;
+    bool comp_timings;   // <-- added
     uint16_t cyls;       
     uint8_t  heads;      
     uint8_t  spt;        
@@ -70,6 +79,8 @@ int confirm_type = 0; // 0 = Load Defaults, 1 = Save
 #define RESET       "\033[0m"
 #define BG_BLUE     "\033[44m"
 #define FG_WHITE    "\033[37;1m"
+#define FG_RED      "\033[91m"
+#define FG_GREEN    "\033[92m"
 #define FG_YELLOW   "\033[33;1m"
 #define HIDE_CUR    "\033[?25l"
 #define CLR_SCR     "\033[2J"
@@ -90,7 +101,8 @@ typedef enum {
     SCREEN_MAIN,
     SCREEN_FEATURES,
     SCREEN_CONFIRM,
-    SCREEN_MOUNTED
+    SCREEN_MOUNTED,
+    SCREEN_DEBUG
 } screen_t;
 
 bool unmount_confirm_active = false;
@@ -102,7 +114,8 @@ bool last_cdc_connected = false;
 int main_selected = 0;
 int feat_selected = 0;
 bool auto_mount = false;
-bool iordy_pin = false; 
+bool iordy_pin = false;
+bool comp_timings = false; // The Global Variable for Compat Timings
 
 void draw_at(int x, int y, const char* text) {
     printf("\033[%d;%dH%s", y, x, text);
@@ -223,7 +236,6 @@ void update_main_menu() {
         "  Load Setup Defaults",       "  Save Setup to EEPROM"
     };
 
-    // Draw the 6 menu items
     for (int i = 0; i < 6; i++) {
         int col = (i < 3) ? 4 : 43;
         int row = 6 + (i % 3) * 2;
@@ -235,93 +247,81 @@ void update_main_menu() {
         }
     }
 
-    // Footer Help Text
     printf("\033[19;3H ESC: Quit to Main Menu                         ↑ ↓ → ←: Select Item");
     printf("\033[20;3H F10: Save Current Setup to EEPROM               Enter: Select");
 
-    // --- Centered HDD Model Logic ---
-    // --- Centered HDD Model / Error Logic ---
     const char *display;
     bool is_error = false;
 
     if (show_detect_result && hdd_status_text[0]) {
-        display = hdd_status_text;   // Use error text
+        display = hdd_status_text;   
         is_error = true;
     } else if (hdd_model_raw[0]) {
-        display = hdd_model_raw;     // Normal drive model
+        display = hdd_model_raw;     
     } else {
         display = "No Drive Detected";
     }
 
-    // Center the text
-    int label_len = 13; // "Current HDD: "
+    int label_len = 13; 
     int text_len = visible_strlen(display);
     int start_x = (80 - (label_len + text_len)) / 2;
 
     draw_at(start_x, 22, FG_WHITE "Current HDD: ");
 
-    // Display in appropriate color
     if (is_error) {
-        printf("\033[91;1m%s" RESET BG_BLUE FG_WHITE "\033[K", display); // red for error
+        printf("\033[91;1m%s" RESET BG_BLUE FG_WHITE "\033[K", display); 
     } else if (hdd_model_raw[0]) {
-        printf("\033[32;1m%s" RESET BG_BLUE FG_WHITE "\033[K", display); // green for normal
+        printf("\033[32;1m%s" RESET BG_BLUE FG_WHITE "\033[K", display); 
     } else {
-        printf(FG_YELLOW "%s" RESET BG_BLUE FG_WHITE "\033[K", display); // yellow for placeholder
+        printf(FG_YELLOW "%s" RESET BG_BLUE FG_WHITE "\033[K", display); 
     }
-
 
     printf(RESET BG_BLUE FG_WHITE "\033[K");
     printf("\033[22;78H  ║");
 
-    // --- Centered Current Geometry / LBA Logic ---
     char geo_vals[64];
-
     if (use_lba_mode) {
-        // Calculate MB size from the LBA sector count we saved earlier
         uint32_t mb_size = (uint32_t)((uint64_t)total_lba_sectors_from_identify * 512 / 1048576);
         snprintf(geo_vals, sizeof(geo_vals), "LBA Mode Active (%lu MB)", mb_size);
     } else {
-        // Standard CHS display
         snprintf(geo_vals, sizeof(geo_vals), "%d Cyl / %d Hd / %d SPT", cur_cyls, cur_heads, cur_spt);
     }
 
-    // Recalculate centering based on the new string length
     int geo_total_len = 18 + strlen(geo_vals);
     int geo_x = (80 - geo_total_len) / 2;
 
     draw_at(geo_x, 23, FG_WHITE "Current Geometry: "); 
 
-    // Green text if valid settings exist, Red if not
     bool is_valid = (use_lba_mode && total_lba_sectors_from_identify > 0) || 
                     (!use_lba_mode && cur_cyls > 0 && cur_heads > 0 && cur_spt > 0);
 
     if (is_valid) {
-        printf("\033[92;1m%s", geo_vals); // Green
+        printf("\033[92;1m%s", geo_vals); 
     } else {
-        printf("\033[91;1m%s", geo_vals); // Red
+        printf("\033[91;1m%s", geo_vals); 
     }
 
-    // Clean up the rest of the line and draw the right border
     printf(RESET BG_BLUE FG_WHITE "\033[K");
     printf("\033[23;78H  ║"); 
 
-    // Park cursor
     printf("\033[24;79H");
     fflush(stdout);
 }
 
 void update_features_menu() {
-    const char* labels[] = {"Write Protect", "Auto Mount at Start", "IORDY"};
+    const char* labels[] = {"Write Protect", "Auto Mount at Start", "IORDY", "Timings", "Debug Mode"};
     const char* helps[] = {
         "Prevents any write commands from reaching the HDD hardware.",
         "Automatically mounts the drive to USB on power-up sequence.",
-        "Selects hardware pin 27 for IORDY or software emulation."
+        "Selects hardware pin 27 for IORDY or software emulation.  NOT YET FUNCTIONAL!",
+        "Allows relaxed timing for particularly picky/older drives.  May be slower.",
+        "Open low-level drive diagnostics and register status screen."
     };
 
     printf("\033[3;63H" FG_WHITE "Item Help");
     printf("\033[4;55H\u251C────────────────────────\u2562"); 
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 5; i++) {
         int row = 4 + i; 
         printf("\033[%d;4H" FG_WHITE "%-25s", row, labels[i]);
         printf("\033[%d;35H" FG_YELLOW "[", row);
@@ -329,8 +329,10 @@ void update_features_menu() {
         else printf(FG_YELLOW);
 
         if (i == 0) printf("%-8s", drive_write_protected ? "Enabled" : "Disabled");
-        if (i == 1) printf("%-8s", auto_mount    ? "Enabled" : "Disabled");
-        if (i == 2) printf("%-8s", iordy_pin     ? "Pin 27 " : "Software");
+        else if (i == 1) printf("%-8s", auto_mount    ? "Enabled" : "Disabled");
+        else if (i == 2) printf("%-8s", iordy_pin     ? "Pin 27" : "Software");
+        else if (i == 3) printf("%-8s", comp_timings  ? "Compat" : "Normal");
+        else if (i == 4) printf("%-8s", "Enter");
         
         printf(RESET BG_BLUE FG_WHITE "]");
         if (i == feat_selected) print_help(helps[i]);
@@ -374,6 +376,7 @@ void save_config() {
         .drive_write_protected = drive_write_protected,
         .auto_mount = auto_mount,
         .iordy_pin = iordy_pin,
+        .comp_timings = comp_timings,
         .cyls = cur_cyls,
         .heads = cur_heads,
         .spt = cur_spt
@@ -382,27 +385,13 @@ void save_config() {
     static uint8_t buffer[FLASH_PAGE_SIZE];
     memset(buffer, 0, FLASH_PAGE_SIZE);
     memcpy(buffer, &config, sizeof(config));
-
-    // --- FLASH SAFETY START ---
     
-    // 1. Pause Core 0. This is critical because Core 0 is running 
-    // the USB stack (tud_task) from Flash.
     multicore_lockout_start_blocking();
-
-    // 2. Disable interrupts on the current core (Core 1)
     uint32_t ints = save_and_disable_interrupts();
-
-    // 3. Perform the actual Flash operations
     flash_range_erase((uint32_t)FLASH_TARGET_OFFSET, FLASH_SECTOR_SIZE);
     flash_range_program((uint32_t)FLASH_TARGET_OFFSET, buffer, FLASH_PAGE_SIZE);
-
-    // 4. Re-enable interrupts on Core 1
     restore_interrupts(ints);
-
-    // 5. Wake up Core 0
     multicore_lockout_end_blocking();
-    
-    // --- FLASH SAFETY END ---
 }
 
 void load_config() {
@@ -415,6 +404,7 @@ void load_config() {
         drive_write_protected = config.drive_write_protected;        
         auto_mount = config.auto_mount;
         iordy_pin = config.iordy_pin;
+        comp_timings = config.comp_timings;
         cur_cyls = config.cyls;
         cur_heads = config.heads;
         cur_spt = config.spt;
@@ -425,11 +415,177 @@ void load_defaults() {
     drive_write_protected = true;
     auto_mount = false;
     iordy_pin = false;
+    comp_timings = false;
     main_selected = 0;
     feat_selected = 0;
     cur_cyls = 0;
     cur_heads = 0;
     cur_spt = 0;
+}
+
+
+// --- Debug UI Helpers ---
+
+// Decodes ATA string (Big Endian byte pairs) into a char buffer
+void decode_ata_string(uint16_t* buffer, int offset, int len_words, char* out_buf) {
+    int char_idx = 0;
+    for (int i = 0; i < len_words; i++) {
+        uint16_t w = buffer[offset + i];
+        out_buf[char_idx++] = (char)(w >> 8);     // High byte
+        out_buf[char_idx++] = (char)(w & 0xFF);   // Low byte
+    }
+    out_buf[char_idx] = '\0';
+    
+    // Trim trailing spaces
+    while (char_idx > 0 && out_buf[char_idx - 1] == ' ') {
+        out_buf[--char_idx] = '\0';
+    }
+}
+
+// Prints a line inside the black debug window
+// line_idx: 0 to 16 (relative to the black box)
+void debug_print(int line_idx, const char* color, const char* fmt, ...) {
+    int start_col = 5;   
+    int start_row = 3;
+    int inner_x = start_col + 2;
+    int inner_y = start_row + 1;
+    int inner_w = 68; // box_w (72) - 4
+
+    if (line_idx > 16) return; // Bounds check
+
+    char buf[128];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+
+    // Position cursor, set background black, clear line, print text
+    printf("\033[%d;%dH\033[40m%s%-*s", 
+        inner_y + line_idx, 
+        inner_x, 
+        color, // Formatting (color)
+        inner_w, 
+        buf);  
+    
+    printf(RESET); // Reset after printing
+}
+
+void debug_cls() {
+    for(int i=0; i<17; i++) debug_print(i, FG_WHITE, "");
+}
+
+void run_debug_identify() {
+    debug_cls();
+    debug_print(0, FG_YELLOW, "Sending IDENTIFY DEVICE (0xEC)...");
+    
+    // Ensure drive is selected/ready
+    ide_write_8(6, 0xA0); 
+    if (!ide_wait_until_ready(1000)) {
+        debug_print(1, "\033[91;1m", "TIMEOUT: Drive BSY or Not Present.");
+        return;
+    }
+
+    ide_identify_drive();
+    uint16_t id[256];
+    
+    if (ide_get_identify_data(id)) {
+        char model[41];
+        char serial[21];
+        char fw[9];
+
+        decode_ata_string(id, 27, 20, model);
+        decode_ata_string(id, 10, 10, serial);
+        decode_ata_string(id, 23, 4, fw);
+
+        debug_print(0, "\033[92;1m", "IDENTIFY SUCCESSFUL");
+        debug_print(2, FG_WHITE, "Model:  \033[96m%s", model);
+        debug_print(3, FG_WHITE, "Serial: \033[96m%s", serial);
+        debug_print(4, FG_WHITE, "FW Rev: \033[96m%s", fw);
+        debug_print(5, FG_WHITE, "--------------------------------------------------");
+
+        // CHS Info
+        debug_print(6, FG_YELLOW, "[CHS Geometry]");
+        debug_print(7, FG_WHITE, "Cyls: %-5d  Heads: %-3d  Sectors: %-3d", id[1], id[3], id[6]);
+        
+        // LBA Info
+        bool lba_supp = (id[49] & 0x0200);
+        bool lba48_supp = (id[83] & (1 << 10));
+        uint32_t lba28_cap = id[60] | ((uint32_t)id[61] << 16);
+        uint64_t lba48_cap = ((uint64_t)id[103] << 48) | ((uint64_t)id[102] << 32) |
+                             ((uint64_t)id[101] << 16) | ((uint64_t)id[100]);
+
+        debug_print(9, FG_YELLOW, "[Capabilities]");
+        debug_print(10, FG_WHITE, "LBA Supported:    %s", lba_supp ? "\033[92mYes" : "\033[91mNo");
+        debug_print(11, FG_WHITE, "LBA48 Supported:  %s", lba48_supp ? "\033[92mYes" : "\033[91mNo");
+        
+        if (lba48_supp) {
+            uint32_t gb = (uint32_t)(((uint64_t)lba48_cap * 512) / 1000000000);
+            debug_print(12, FG_WHITE, "Capacity:         %lu Sectors (~%lu GB)", (unsigned long)lba48_cap, gb);
+        } else if (lba_supp) {
+            uint32_t mb = (uint32_t)(((uint64_t)lba28_cap * 512) / 1000000);
+            debug_print(12, FG_WHITE, "Capacity:         %lu Sectors (~%lu MB)", lba28_cap, mb);
+        }
+
+        // Features
+        debug_print(14, FG_YELLOW, "[Advanced]");
+        debug_print(15, FG_WHITE, "DMA Support: %04X  PIO Support: %04X", id[49], id[64]);
+        debug_print(16, FG_WHITE, "ATA Major Ver: %04X", id[80]);
+
+    } else {
+        debug_print(1, "\033[91;1m", "ERROR: DRQ not asserted after command.");
+        debug_print(2, FG_WHITE, "Check cabling, Master/Slave jumper, or power.");
+    }
+}
+
+void draw_debug_overlay() {
+    int box_w = 72;
+    int box_h = 20;      
+    int start_col = 5;   
+    int start_row = 3;
+
+    // Interior "Black Area" dimensions
+    int inner_x = start_col + 2;
+    int inner_y = start_row + 1;
+    int inner_w = box_w - 4;
+    int inner_h = box_h - 3;
+
+    // 1. Force Reset and Draw Shadow
+    printf(RESET);
+    for (int i = 0; i < box_h; i++) {
+        printf("\033[%d;%dH\033[40m%*s", start_row + 1 + i, start_col + 2, box_w, "");
+    }
+
+    // 2. Draw Main Blue Body
+    for (int i = 0; i < box_h; i++) {
+        printf("\033[%d;%dH\033[44m%*s", start_row + i, start_col, box_w, "");
+    }
+
+    // 3. Draw Black Debug Window
+    for (int i = 0; i < inner_h; i++) {
+        printf("\033[%d;%dH\033[40m%*s", inner_y + i, inner_x, inner_w, "");
+    }
+
+    // 4. Draw White Borders (Overlaying the backgrounds)
+    printf(FG_WHITE BG_BLUE);
+    draw_at(start_col, start_row + 0, "╔══════════════════════════════════════════════════════════════════════╗");
+    for(int i = 1; i < box_h - 1; i++) {
+        // We only draw the side pipes so we don't overwrite the black center
+        draw_at(start_col, start_row + i, "║");
+        draw_at(start_col + box_w - 1, start_row + i, "║");
+    }
+    draw_at(start_col, start_row + box_h - 1, "╚══════════════════════════════════════════════════════════════════════╝");
+
+    // 5. Explicitly Position Text
+    // Title (Top line of frame)
+    draw_at(start_col + 29, start_row, "[ Debug Mode ]");
+    
+    // Footer (Bottom line of frame)
+    // We use a specific row calculation to ensure it's on the blue border
+    int footer_row = start_row + box_h - 2;
+    printf("\033[%d;%dH" FG_WHITE BG_BLUE " ESC: Return  I: IDENT  T: Task File  E: Error Bits  S: Seek Test", footer_row, start_col + 3);
+    
+    printf(RESET);
+    fflush(stdout);
 }
 
 void draw_confirm_box(const char* message) {
@@ -510,9 +666,7 @@ void draw_selection_menu(uint16_t* identify_data, int selected_idx) {
     uint8_t n_hd   = (uint8_t)identify_data[3];
     uint8_t n_spt  = (uint8_t)identify_data[6];
     
-    // Check Bit 9 (0x0200) of Word 49 for LBA support
     bool drive_supports_lba = (identify_data[49] & 0x0200);
-    // Parse LBA totals: LBA28 in words 60..61, LBA48 in words 100..103
     uint32_t lba28 = identify_data[60] | ((uint32_t)identify_data[61] << 16);
     uint64_t lba48 = ((uint64_t)identify_data[103] << 48)
                    | ((uint64_t)identify_data[102] << 32)
@@ -524,8 +678,8 @@ void draw_selection_menu(uint16_t* identify_data, int selected_idx) {
     uint8_t l_hd;
     get_large_geometry(n_cyl, n_hd, n_spt, &l_cyl, &l_hd);
 
-    uint32_t n_size = (uint32_t)n_cyl * n_hd * n_spt * 512 / 1048576;
-    uint32_t l_size = (uint32_t)l_cyl * l_hd * n_spt * 512 / 1048576;
+    uint32_t n_size = (uint32_t)(((uint64_t)n_cyl * n_hd * n_spt * 512) / 1048576);
+    uint32_t l_size = (uint32_t)(((uint64_t)l_cyl * l_hd * n_spt * 512) / 1048576);
     uint32_t lba_size = (uint32_t)((lba_total64 * 512ULL) / 1048576ULL);
     bool drive_supports_lba48 = ((identify_data[83] & (1<<10)) != 0) || (lba_total64 > 0x0FFFFFFFULL);
 
@@ -565,7 +719,6 @@ void draw_selection_menu(uint16_t* identify_data, int selected_idx) {
         bool is_lba_row = (i == 2);
         bool lba_unsupported = (is_lba_row && !drive_supports_lba);
 
-        // Highlight MODE column (use LBA48 label when appropriate)
         if (i == selected_idx) {
             if (lba_unsupported) printf("\033[41;33m %-8s \033[0m" SEL_RED, (is_lba_row ? lba_label : modes[i])); 
             else printf("\033[103;30m %-8s \033[0m" SEL_RED, (is_lba_row ? lba_label : modes[i])); 
@@ -574,18 +727,16 @@ void draw_selection_menu(uint16_t* identify_data, int selected_idx) {
             else printf(FG_WHITE " %-8s ", (is_lba_row ? lba_label : modes[i]));
         }
 
-        // Print Data Columns
         if (lba_unsupported) {
             printf("\033[90m      --- MB    (Not Supported by Drive)           \033[0m" SEL_RED);
         }
-        else if (i == 0) { // NORMAL
+        else if (i == 0) { 
             printf("   %4lu MB    %-5u       %-3u       %-3u            ", n_size, n_cyl, n_hd, n_spt);
         } 
-        else if (i == 1) { // LARGE
+        else if (i == 1) { 
             printf("   %4lu MB    %-5u       %-3u       %-3u            ", l_size, l_cyl, l_hd, n_spt);
         } 
-        else if (i == 2) { // LBA / LBA48
-            // Keep the SIZE column width stable. If very large, show in GB to avoid overflow.
+        else if (i == 2) { 
             if (drive_supports_lba48) {
                 if (lba_size > 9999) {
                     uint32_t gb = lba_size / 1024;
@@ -594,7 +745,6 @@ void draw_selection_menu(uint16_t* identify_data, int selected_idx) {
                     printf("   %4lu MB           LBA (48-bit)                  ", (unsigned long)lba_size);
                 }
             } else {
-                // For LBA28 drives, show GB when the MB value would overflow the column
                 if (lba_size > 9999) {
                     uint32_t gb = lba_size / 1024;
                     printf("   %4lu GB           LBA (28-bit)                  ", (unsigned long)gb);
@@ -603,9 +753,9 @@ void draw_selection_menu(uint16_t* identify_data, int selected_idx) {
                 }
             }
         }
-        else if (i == 3) { // MANUAL
+        else if (i == 3) { 
             if (detect_cyls > 0) {
-                uint32_t m_size = (uint32_t)detect_cyls * detect_heads * detect_spt * 512 / 1048576;
+                uint32_t m_size = (uint32_t)((uint64_t)detect_cyls * detect_heads * detect_spt * 512 / 1048576);
                 printf("   %4lu MB    %-5u       %-3u       %-3u            ", m_size, detect_cyls, detect_heads, detect_spt);
             } else {
                 printf("   ---- MB    -----       ---       ---            ");
@@ -626,7 +776,6 @@ void draw_selection_menu(uint16_t* identify_data, int selected_idx) {
 void core1_entry() {
     bool trigger_overlay = false;
     while (true) {
-        // --- Connection Sensing ---
         bool connected = tud_cdc_connected();
         if (connected && !last_cdc_connected) {
             sleep_ms(200); 
@@ -640,20 +789,21 @@ void core1_entry() {
                 update_main_menu();
             } else if (current_screen == SCREEN_FEATURES) {
                 update_features_menu();
+            } else if (current_screen == SCREEN_DEBUG) {
+                draw_debug_overlay();
             }
 
-            if (show_detect_result || current_screen == SCREEN_CONFIRM || current_screen == SCREEN_MOUNTED) {
+            if (show_detect_result || current_screen == SCREEN_CONFIRM || current_screen == SCREEN_MOUNTED || current_screen == SCREEN_DEBUG) {
                 trigger_overlay = true;
             }
             needs_full_redraw = false;
         }
 
-        if (!show_detect_result && current_screen != SCREEN_CONFIRM && current_screen != SCREEN_MOUNTED) {
+        if (!show_detect_result && current_screen != SCREEN_CONFIRM && current_screen != SCREEN_MOUNTED && current_screen != SCREEN_DEBUG) {
             if (current_screen == SCREEN_MAIN) update_main_menu();
             else if (current_screen == SCREEN_FEATURES) update_features_menu();
         }
 
-        // --- Overlay Rendering ---
         if (show_detect_result) {
             if (trigger_overlay) { 
                 draw_error_box(hdd_status_text);
@@ -674,6 +824,11 @@ void core1_entry() {
                 draw_at(15, 12, SEL_RED "            Press 'U' to Unmount Drive            ║" RESET);
                 trigger_overlay = false;
             }
+        } else if (current_screen == SCREEN_DEBUG) {
+            if (trigger_overlay) {
+                draw_debug_overlay();
+                trigger_overlay = false;
+            }
         }
 
         printf("\033[24;79H"); fflush(stdout);
@@ -681,7 +836,6 @@ void core1_entry() {
         int k = get_input();
         if (k == -1) { tight_loop_contents(); continue; }
 
-        // --- Input Handling ---
         if (show_detect_result) {
             if (k == KEY_ENTER || k == KEY_ESC) {
                 show_detect_result = false;
@@ -705,6 +859,141 @@ void core1_entry() {
             continue;
         }
 
+        if (current_screen == SCREEN_DEBUG) {
+            if (k == KEY_ESC) {
+                current_screen = SCREEN_FEATURES;
+                needs_full_redraw = true;
+            }
+            else if (k == 'i' || k == 'I') {
+                debug_cls();
+                run_debug_identify();
+            }
+            else if (k == 't' || k == 'T') {
+                debug_cls();
+                uint8_t task_file[8];
+                ide_get_task_file(task_file);
+                
+                // Color formatting for the status byte
+                const char* status_color = (task_file[7] & 0x81) ? "\033[91;1m" : "\033[92m";
+
+                // We use debug_print to handle the coordinate math and background clearing
+                debug_print(0, FG_RED, "[Task File] " FG_WHITE "ERR:%02X SEC:%02X SN:%02X CL:%02X CH:%02X DH:%02X ST:%s%02X" RESET, 
+                task_file[1], task_file[2], task_file[3], task_file[4], 
+                task_file[5], task_file[6], status_color, task_file[7]);
+            }
+            else if (k == 'e' || k == 'E') {
+                debug_cls();
+                uint8_t err_reg = ide_read_8(1); // Read Error Register directly
+                
+                char err_buf[64] = {0};
+                if (err_reg == 0) {
+                    snprintf(err_buf, sizeof(err_buf), "\033[92mNo Errors Reported\033[0m");
+                } else {
+                    // Assemble the error string
+                    strcat(err_buf, (err_reg & 0x80) ? "BBK " : "");
+                    strcat(err_buf, (err_reg & 0x40) ? "UNC " : "");
+                    strcat(err_buf, (err_reg & 0x20) ? "MC "  : "");
+                    strcat(err_buf, (err_reg & 0x10) ? "IDNF " : "");
+                    strcat(err_buf, (err_reg & 0x08) ? "MCR "  : "");
+                    strcat(err_buf, (err_reg & 0x04) ? "ABRT " : "");
+                    strcat(err_buf, (err_reg & 0x02) ? "TK0 "  : "");
+                    strcat(err_buf, (err_reg & 0x01) ? "AMNF " : "");
+                }
+
+                debug_print(0, FG_RED, "[Error Bits] %s", err_buf);
+            }
+            else if (k == 's' || k == 'S') {
+                debug_cls();
+                debug_print(0, FG_YELLOW, "Seek Test Running...");
+
+                uint16_t id[256];
+                ide_write_8(6, 0xA0); 
+                if (!ide_wait_until_ready(1000)) {
+                    debug_print(1, FG_RED, "TIMEOUT: Drive not ready.");
+                    sleep_ms(1500);
+                    continue;
+                }
+
+                ide_identify_drive(); 
+                if (!ide_get_identify_data(id)) {
+                    debug_print(1, FG_RED, "ERROR: No data from IDENTIFY.");
+                    sleep_ms(1500);
+                    continue;
+                }
+
+                bool supports_lba = (id[49] & 0x0200);
+                uint32_t max_range = supports_lba ? (id[60] | ((uint32_t)id[61] << 16)) : id[1];
+                if (max_range == 0) max_range = 1024;
+
+                double x = 0;
+                while (true) {
+                    int exit_check = getchar_timeout_us(0);
+                    if (exit_check == 27) break; 
+
+                    // Sine wave for positioning
+                    double pos = (sin(x) * 0.45) + 0.5;
+                    uint32_t target = (uint32_t)(pos * (max_range - 1));
+
+                    if (supports_lba) {
+                        ide_write_8(3, target & 0xFF);         
+                        ide_write_8(4, (target >> 8) & 0xFF);  
+                        ide_write_8(5, (target >> 16) & 0xFF); 
+                        ide_write_8(6, 0xE0 | ((target >> 24) & 0x0F)); 
+                    } else {
+                        ide_write_8(4, target & 0xFF);         
+                        ide_write_8(5, (target >> 8) & 0xFF);  
+                        ide_write_8(6, 0xA0); 
+                    }
+
+                    // --- THE NOISE TRICK ---
+                    ide_write_8(2, 1);    // Sector Count: 1
+                    ide_write_8(7, 0x20); // READ SECTOR (Forced mechanical action)
+
+                    // 1. Wait for BSY to clear and DRQ (Data Request) to be ready
+                    // Using a tight loop to satisfy the drive quickly
+                    while (ide_read_8(7) & 0x80); 
+                    
+                    // 2. DRAIN THE BUFFER: This is what creates the "Activity" noise
+                    // We must read 256 words (512 bytes) to clear the drive's DRQ
+                    if (ide_read_8(7) & 0x08) {
+                        for (int i = 0; i < 256; i++) {
+                            // We don't need to store it, just read the port
+                            // Your ide_read_8(0) reads the 16-bit data port in your logic
+                            ide_read_8(0); 
+                        }
+                    }
+
+                    // Visual "Flow"
+                    char bar[61];
+                    memset(bar, '-', 60);
+                    bar[(int)(pos * 59)] = '#';
+                    bar[60] = '\0';
+
+                    debug_print(14, FG_GREEN, "[%s]", bar);
+                    debug_print(15, FG_WHITE, "Target %s: %lu (ST:%02X)", 
+                                supports_lba ? "LBA" : "CYL", target, ide_read_8(7));
+
+                    x += 0.12;    // Adjust for "musical" frequency
+                    // No sleep_ms needed here because the I/O bottleneck 
+                    // provides the timing naturally, just like a real OS.
+                }
+                debug_print(14, FG_WHITE, "                                                                ");
+                debug_print(15, FG_WHITE, "                                                                ");
+
+                // 2. Small delay to let the Serial/Terminal buffer settle
+                sleep_ms(50); 
+
+                // 3. Clear the whole terminal screen buffer
+                printf("\033[2J\033[H"); 
+
+                // 4. Force state reset
+                debug_cls(); 
+                current_screen = SCREEN_DEBUG; 
+                needs_full_redraw = true;
+            }
+            continue;
+        }
+
         if (current_screen == SCREEN_CONFIRM) {
             if (k == 'y' || k == 'Y') {
                 if (confirm_type == 0) { load_defaults(); save_config(); current_screen = SCREEN_MAIN; }
@@ -716,10 +1005,10 @@ void core1_entry() {
                     is_mounted = false;
                     detect_cyls = 0; detect_heads = 0; detect_spt = 0;
                     hdd_model_raw[0] = '\0';
-                    snprintf(hdd_status_text, sizeof(hdd_status_text), "\033[91;1mDrive Reset - Redetect Required");
+                    snprintf(hdd_status_text, sizeof(hdd_status_text), "\033[93;1mDrive Reset - Redetect Required");
                     show_detect_result = true; current_screen = SCREEN_MAIN;
                 }
-                else if (confirm_type == 3) { is_mounted = true; media_changed_waiting = true; current_screen = SCREEN_MOUNTED; }
+                else if (confirm_type == 3) { is_mounted = true; ide_flush_cache(); media_changed_waiting = true; current_screen = SCREEN_MOUNTED; } // Added a cache flush
                 else if (confirm_type == 4) { is_mounted = false; media_changed_waiting = true; current_screen = SCREEN_MAIN; }
                 needs_full_redraw = true;
             } 
@@ -761,7 +1050,7 @@ void core1_entry() {
                 else if (main_selected == 2) { current_screen = SCREEN_CONFIRM; confirm_type = 2; trigger_overlay = true; needs_full_redraw = true; }
                 else if (main_selected == 3) { // AUTO DETECT DRIVE
                     ide_reset_drive();
-                    if (ide_wait_until_ready(3000)) { 
+                    if (ide_wait_until_ready(5000)) { 
                         sleep_ms(100); 
                         ide_identify_drive();
                         uint16_t id_buf[256];
@@ -800,7 +1089,6 @@ void core1_entry() {
                                 } 
                                 else if (choice == KEY_ESC) { waiting_for_choice = false; } 
                                 
-                                // --- Manual Geometry Logic ---
                                 else if (choice == '\t' || (choice == KEY_ENTER && geo_idx == 3 && (detect_cyls == 0 || detect_heads == 0 || detect_spt == 0))) {
                                     geo_idx = 3; 
                                     draw_selection_menu(id_buf, geo_idx); 
@@ -846,7 +1134,7 @@ void core1_entry() {
                                         cur_cyls = id_buf[1]; cur_heads = (uint8_t)id_buf[3]; cur_spt = (uint8_t)id_buf[6];
                                         uint64_t id_lba48 = ((uint64_t)id_buf[103] << 48) | ((uint64_t)id_buf[102] << 32) |
                                                            ((uint64_t)id_buf[101] << 16) | ((uint64_t)id_buf[100]);
-                                        total_lba_sectors_from_identify = id_lba48;  // total_lba_sectors_from_identify = (id_lba48 > 0xFFFFFFFFULL) ? 0xFFFFFFFFU : (uint32_t)id_lba48; // Gemini says to change it to above.
+                                        total_lba_sectors_from_identify = id_lba48;
                                         if (total_lba_sectors_from_identify == 0)
                                             total_lba_sectors_from_identify = id_buf[60] | ((uint32_t)id_buf[61] << 16);
                                         selection_valid = true;
@@ -870,7 +1158,7 @@ void core1_entry() {
                             show_detect_result = true; trigger_overlay = true; hdd_model_raw[0] = '\0';
                          }
                     } else { 
-                        snprintf(hdd_status_text, sizeof(hdd_status_text), "\033[91;1mTimeout: Drive BSY");
+                        snprintf(hdd_status_text, sizeof(hdd_status_text), "\033[93;1mTimeout: Drive BSY");
                         show_detect_result = true; trigger_overlay = true;
                     }
                     needs_full_redraw = true; 
@@ -881,12 +1169,16 @@ void core1_entry() {
         } 
         else if (current_screen == SCREEN_FEATURES) {
             if (k == KEY_UP && feat_selected > 0) feat_selected--;
-            else if (k == KEY_DOWN && feat_selected < 2) feat_selected++;
+            else if (k == KEY_DOWN && feat_selected < 4) feat_selected++; // Max 4 for "Debug Mode"
             else if (k == KEY_ESC) current_screen = SCREEN_MAIN;
             else if (k == '+' || k == '-' || k == '=' || k == KEY_PGUP || k == KEY_PGDN || k == KEY_ENTER) {
                 if (feat_selected == 0) drive_write_protected = !drive_write_protected;
                 else if (feat_selected == 1) auto_mount = !auto_mount;
                 else if (feat_selected == 2) iordy_pin = !iordy_pin;
+                else if (feat_selected == 3) comp_timings = !comp_timings;
+                else if (feat_selected == 4 && k == KEY_ENTER) {
+                    current_screen = SCREEN_DEBUG;
+                }
             }
             needs_full_redraw = true;
         }
@@ -908,7 +1200,7 @@ int main() {
         }
 
         ide_reset_drive();
-        if (ide_wait_until_ready(3000)) {
+        if (ide_wait_until_ready(5000)) {
             ide_identify_drive();
             uint16_t id_buf[256];
             if (ide_get_identify_data(id_buf)) {
@@ -923,22 +1215,17 @@ int main() {
             }
         }
 
-        // Inside your drive initialization/mount logic in menus.c
-            if (use_lba_mode) {
-                // DO NOT call ide_set_geometry(0x91) here.
-                // LBA drives do not need to be told their geometry; 
-                // they just need the LBA bit set in Register 6 during Read/Write.
-                drive_cylinders = 0; 
-                drive_heads = 0;
-                drive_spt = 0;
-            } else {
-                // ONLY set geometry for legacy CHS mode
-                if (ide_set_geometry(cur_heads, cur_spt)) {
-                    drive_cylinders = cur_cyls;
-                    drive_heads = cur_heads;
-                    drive_spt = cur_spt;
-                }
+        if (use_lba_mode) {
+            drive_cylinders = 0; 
+            drive_heads = 0;
+            drive_spt = 0;
+        } else {
+            if (ide_set_geometry(cur_heads, cur_spt)) {
+                drive_cylinders = cur_cyls;
+                drive_heads = cur_heads;
+                drive_spt = cur_spt;
             }
+        }
     }
 
     multicore_launch_core1(core1_entry);
