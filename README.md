@@ -1,3 +1,14 @@
+PLEASE NOTE!
+Most of this "proof of concept" firmware code was written with AI assistance.  It's a mess.
+It currently contains IPC re-entry, and other bugs that could cause crashes under certain circumtstances.
+It does function for the most part, but can be buggy and slow.
+It is also incomplete, and some functionality is not yet enabled (e.g. IORDY/IRQ pins, etc)
+Use at your own risk!
+-----------------------------------------------------------------------------------
+
+
+
+
 ```
                                   _____ _____  ______                      
                                  |_   _|  __ \|  ____|                     
@@ -127,3 +138,4 @@ IDEasy is a hobbyist and experimental project. You should be aware that:
 IDEasy is meant to be hacked, learned from, and improved.
 
 Have fun, and welcome to IDEasy!
+
