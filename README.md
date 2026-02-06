@@ -6,6 +6,8 @@ It is also incomplete, and some functionality is not yet enabled (e.g. IORDY/IRQ
 Use at your own risk!
 -----------------------------------------------------------------------------------
 
+![image](https://github.com/redruM0381/ATAboy/blob/main/test2.png)
+
 
 ATAboy is designed for retro computing enthusiasts, data recovery experts, and archivists.  Read and write the oldest of IDE hard drives, without the need for an "in-between" vintage computer!
 
@@ -126,5 +128,6 @@ ATAboy is a hobbyist and experimental project. You should be aware that:
 ATAboy is meant to be hacked, learned from, and improved.
 
 Have fun, and welcome to ATAboy!
+
 
 
