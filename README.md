@@ -7,21 +7,9 @@ Use at your own risk!
 -----------------------------------------------------------------------------------
 
 
+ATAboy is designed for retro computing enthusiasts, data recovery experts, and archivists.  Read and write the oldest of IDE hard drives, without the need for an "in-between" vintage computer!
 
-
-```
-                                  _____ _____  ______                      
-                                 |_   _|  __ \|  ____|                     
-                                   | | | |  | | |__   __ _ ___ _   _       
-                                   | | | |  | |  __| / _` / __| | | |      
-                                  _| |_| |__| | |___| (_| \__ \ |_| |      
-                                 |_____|_____/|______\__,_|___/\__, |      by JJ Dasher
-                                                                __/ |      
-                                                               |___/
-```
-IDEasy is designed for retro computing enthusiasts, data recovery experts, and archivists.  Read and write the oldest of IDE hard drives, without the need for an "in-between" vintage computer!
-
-IDEasy is a user-friendly bridge that allows classic IDE (PATA) hard drives to be connected to a modern computer over USB as a standard USB Mass Storage device.  While cheap, modern adapters usually only work with newer "LBA" type drives, IDEasy works all the way back to the earliest CHS only, PIO Mode 0, ATA disks.  (It will also work with newer LBA type IDE disks, but that's not really what it's designed for.)  IDEasy features an "Award BIOS inspired" user friendly UI for drive configuration and setup.
+ATAboy is a user-friendly bridge that allows classic IDE (PATA) hard drives to be connected to a modern computer over USB as a standard USB Mass Storage device.  While cheap, modern adapters usually only work with newer "LBA" type drives, ATAboy works all the way back to the earliest CHS only, PIO Mode 0, ATA disks.  (It will also work with newer LBA type IDE disks, but that's not really what it's designed for.)  ATAboy features an "Award BIOS inspired" user friendly UI for drive configuration and setup.
 
 ---
 
@@ -39,7 +27,7 @@ To get started, you will also need:
 
 * Any 40‑pin IDE (PATA) hard drive with jumpers set for MASTER/SINGLE only!
 * An external PSU to power the drive.
-* A USB-C cable to connect IDEasy to the host computer.
+* A USB-C cable to connect ATAboy to the host computer.
 * Any standard ANSI compatible serial terminal emulator (e.g. PuTTY, Tera Term, minicom, screen, etc.)
 
 ---
@@ -47,21 +35,21 @@ To get started, you will also need:
 ## Connecting a Drive
 
 1. Power off everything
-2. Connect the IDE ribbon cable to the drive and IDEasy (Note Pin 1 orientation, usually marked by a stripe on the cable)
+2. Connect the IDE ribbon cable to the drive and ATAboy (Note Pin 1 orientation, usually marked by a stripe on the cable)
 3. Power on the IDE drive
-4. Connect IDEasy to your computer via USB
+4. Connect ATAboy to your computer via USB
 
 ---
 
 ## Serial Console Access
 
 ```
-         IDEasy Setup Utility V 0.4 - Copyright (C) 2026 Obsolete Tech
+         ATAboy Setup Utility V 0.4 - Copyright (C) 2026 Obsolete Tech
 ╔══════════════════════════════════════╤═══════════════════════════════════════╗
 ║                                      │                                       ║
 ║                                      │                                       ║
 ║                                      │                                       ║
-║   ► IDEasy Features Setup            │     Auto Detect & Set Geometry        ║
+║   ► ATAboy Features Setup            │     Auto Detect & Set Geometry        ║
 ║                                      │                                       ║
 ║     Mount HDD to USB Mass Storage    │     Load Setup Defaults               ║
 ║                                      │                                       ║
@@ -83,8 +71,8 @@ To get started, you will also need:
 
 ```
 
-IDEasy exposes a USB serial console UI used to configure the drive, change system settings, mount the drive, etc.
-After connecting IDEasy via USB, first find the new serial port:
+ATAboy exposes a USB serial console UI used to configure the drive, change system settings, mount the drive, etc.
+After connecting ATAboy via USB, first find the new serial port:
 
 Windows:
 Open Device Manager → Ports (COM & LPT) and look for a new USB Serial Device (COMx).
@@ -127,7 +115,7 @@ This helps prevent:
 
 ## Known Limitations
 
-IDEasy is a hobbyist and experimental project. You should be aware that:
+ATAboy is a hobbyist and experimental project. You should be aware that:
 
 * Performance is significantly slower than modern USB to IDE bridges.  We're working over USB 1.1 for now.  This can cause long mount times, especially in Windows if the disk has logical weirdness.
 * Many legacy disks use unusual geometry, and may require experimentation.
@@ -135,7 +123,8 @@ IDEasy is a hobbyist and experimental project. You should be aware that:
 
 ---
 
-IDEasy is meant to be hacked, learned from, and improved.
+ATAboy is meant to be hacked, learned from, and improved.
 
-Have fun, and welcome to IDEasy!
+Have fun, and welcome to ATAboy!
+
 
