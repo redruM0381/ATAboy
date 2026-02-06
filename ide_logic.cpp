@@ -7,8 +7,6 @@
 #include "pico/time.h"
 #include <string.h>
 
-
-
 // Immediate mitigation: prevent TinyUSB re-entry from IDE I/O paths.
 // Replace calls to tud_task() in this file with TUSB_POLL_SAFE(), which
 // yields without re-entering TinyUSB.  This will pause USB/CDC briefly
@@ -68,9 +66,6 @@ static inline void ide_setup_lba28(uint32_t lba, uint8_t count);
 #define IDE_OE      18
 #define IDE_OE1     19
 #define CTRL_MASK   ((1 << IDE_CS0) | (1 << IDE_CS1) | (1 << IDE_DIOR) | (1 << IDE_DIOW))
-#define ERROR_LED   32  // GPIO for error LED (active high)
-
-
 
 /* ================= BUS LOGIC HELPERS ================= */
 
@@ -219,11 +214,7 @@ uint16_t ide_read_16_compat(uint8_t reg) {
 
 /* ================= DISPATCHERS ================= */
 uint8_t ide_read_8(uint8_t reg) {
-    uint8_t val = comp_timings ? ide_read_8_compat(reg) : ide_read_8_fast(reg);
-    if (reg == 1) { // ATA Error register
-        gpio_put(ERROR_LED, val ? 1 : 0);
-    }
-    return val;
+    return comp_timings ? ide_read_8_compat(reg) : ide_read_8_fast(reg);
 }
 
 void ide_write_8(uint8_t reg, uint8_t val) {
@@ -625,15 +616,6 @@ int32_t ide_read_sectors_lba(uint32_t lba, uint32_t count, uint8_t* buffer) {
 
 // --- GENERAL FUNCS ---
 
-// Poll timer to keep LED updated even when no host commands arrive
-static repeating_timer_t error_poll_timer;
-static bool error_poll_cb(repeating_timer_t *rt) {
-    (void) rt;
-    uint8_t err = comp_timings ? ide_read_8_compat(1) : ide_read_8_fast(1);
-    gpio_put(ERROR_LED, err ? 1 : 0);
-    return true; // keep repeating
-}
-
 bool ide_wait_until_ready(uint32_t timeout_ms) {
     uint32_t start = board_millis();
     while (board_millis() - start < timeout_ms) {
@@ -659,16 +641,6 @@ void ide_hw_init(void) {
     gpio_set_dir_out_masked(all_pins & ~DATA_MASK);
     gpio_put(IDE_RESET, 1);
     bus_idle();
-
-    // Initialize error LED pin
-    gpio_init(ERROR_LED);
-    gpio_disable_pulls(ERROR_LED);
-    gpio_set_dir(ERROR_LED, GPIO_OUT);
-    gpio_put(ERROR_LED, 0);
-
-    // Start periodic poll (every 100 ms) to update error LED continuously.
-    // Ignore failure silently (e.g., if timer already added).
-    add_repeating_timer_ms(100, error_poll_cb, NULL, &error_poll_timer);
 }
 
 void ide_reset_drive() {
