@@ -28,7 +28,7 @@ set(PICO_BOARD pico2 CACHE STRING "Board type")
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
-project(IDEasy C CXX ASM)
+project(ATAboy C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
@@ -36,22 +36,22 @@ pico_sdk_init()
 # Add executable. Default name is the project name, version 0.1
 
 # Add both source files
-add_executable(IDEasy 
+add_executable(ATAboy 
     menus.c
     ide_logic.cpp 
     msc_disk.c
     usb_descriptors.c
 )
 
-pico_set_program_name(IDEasy "IDEasy")
-pico_set_program_version(IDEasy "0.3")
+pico_set_program_name(ATAboy "ATAboy")
+pico_set_program_version(ATAboy "0.5")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(IDEasy 0)
-pico_enable_stdio_usb(IDEasy 1)
+pico_enable_stdio_uart(ATAboy 0)
+pico_enable_stdio_usb(ATAboy 1)
 
 # Link the multitasking and USB libraries
-target_link_libraries(IDEasy
+target_link_libraries(ATAboy
     pico_stdlib
     pico_multicore
     hardware_flash
@@ -60,14 +60,14 @@ target_link_libraries(IDEasy
 )
 
 # Add the standard include files to the build
-target_include_directories(IDEasy PRIVATE
+target_include_directories(ATAboy PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
 )
 
 # Add any user requested libraries
-target_link_libraries(IDEasy 
+target_link_libraries(ATAboy 
         
         )
 
-pico_add_extra_outputs(IDEasy)
+pico_add_extra_outputs(ATAboy)
 

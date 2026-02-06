@@ -29,7 +29,7 @@ extern "C" {
 
 void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8], uint8_t product_id[16], uint8_t product_rev[4]) {
     (void) lun;
-    const char vid[] = "IDEasy";
+    const char vid[] = "ATAboy";
     const char pid[] = "Hard Drive";
     const char rev[] = "V0.4";
 

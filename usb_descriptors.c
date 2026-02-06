@@ -73,10 +73,10 @@ uint8_t const * tud_descriptor_configuration_cb(uint8_t index) {
 char const* string_desc_arr [] = {
     (const char[]) { 0x09, 0x04 }, // 0: is supported language is English (0x0409)
     "Obsolete Tech",              // 1: Manufacturer
-    "IDEasy",                       // 2: Product
+    "ATAboy",                       // 2: Product
     "654321",                      // 3: Serials, should use chip ID
-    "IDEasy CDC",                  // 4: CDC Interface
-    "IDEasy Storage",              // 5: MSC Interface
+    "ATAboy CDC",                  // 4: CDC Interface
+    "ATAboy Storage",              // 5: MSC Interface
 };
 
 static uint16_t _desc_str[32];

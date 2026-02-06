@@ -110,7 +110,7 @@ screen_t current_screen = SCREEN_MAIN;
 bool needs_full_redraw = true;
 bool last_cdc_connected = false;
 
-// --- IDEasy Variables ---
+// --- ATAboy Variables ---
 int main_selected = 0;
 int feat_selected = 0;
 bool auto_mount = false;
@@ -200,7 +200,7 @@ void print_help(const char* text) {
 void draw_bios_frame() {
     printf(BG_BLUE FG_WHITE CLR_SCR HIDE_CUR "\033[H");
     printf("\033[1;1H%80s", ""); 
-    printf("\033[1;10H" FG_WHITE "IDEasy Setup Utility V 0.4 - Copyright (C) 2026 Obsolete Tech");
+    printf("\033[1;10H" FG_WHITE "ATAboy Setup Utility V 0.5 - Copyright (C) 2026 Obsolete Tech");
     
     bool is_features = (current_screen == SCREEN_FEATURES);
 
@@ -231,7 +231,7 @@ void draw_bios_frame() {
 
 void update_main_menu() {
     const char* items[] = {
-        "► IDEasy Features Setup", "  Mount HDD to USB Mass Storage",
+        "► ATAboy Features Setup", "  Mount HDD to USB Mass Storage",
         "  Send RESET to HDD",         "  Auto Detect & Set Geometry",
         "  Load Setup Defaults",       "  Save Setup to EEPROM"
     };
