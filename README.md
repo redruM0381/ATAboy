@@ -119,15 +119,15 @@ This helps prevent:
 
 ATAboy is a hobbyist and experimental project. You should be aware that:
 
-* Performance is significantly slower than modern USB to IDE bridges.  We're working over USB 1.1 for now.  This can cause long mount times, especially in Windows if the disk has logical weirdness.
+* Performance is significantly slower than modern USB to IDE bridges.  We're working over USB 1.1 for now.  This can cause long mount times, especially in Windows if the disk has file system weirdness.
 * Many legacy disks use unusual geometry, and may require experimentation.
 * Not all OS disk utilities behave the same way
 
 ---
 
 ATAboy is meant to be hacked, learned from, and improved.
+Have fun, and thank you for trying ATAboy!
 
-Have fun, and welcome to ATAboy!
 
 
 
