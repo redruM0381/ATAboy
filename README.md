@@ -51,7 +51,7 @@ To get started, you will also need:
 
 ## Serial Console Access
 
-![image](https://github.com/redruM0381/ATAboy/blob/main/logo.png)
+![image](https://github.com/redruM0381/ATAboy/blob/main/putty.png)
 
 ATAboy exposes a USB serial console UI used to configure the drive, change system settings, mount the drive, etc.
 After connecting ATAboy via USB, first find the new serial port:
@@ -107,6 +107,7 @@ ATAboy is a hobbyist and experimental project. You should be aware that:
 
 ATAboy is meant to be hacked, learned from, and improved.
 Have fun, and thank you for trying ATAboy!
+
 
 
 
