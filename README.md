@@ -45,39 +45,13 @@ To get started, you will also need:
 2. Connect the IDE ribbon cable to the drive and ATAboy (Note Pin 1 orientation, usually marked by a stripe on the cable)
 3. Power on the IDE drive
 4. Connect ATAboy to your computer via USB
-5. Connect to serial console with terminal of choice (more below)
+5. Connect to serial console with terminal of choice (PuTTY shown)
 
 ---
 
 ## Serial Console Access
 
-```
-         ATAboy Setup Utility V 0.5 - Copyright (C) 2026 Obsolete Tech
-╔══════════════════════════════════════╤═══════════════════════════════════════╗
-║                                      │                                       ║
-║                                      │                                       ║
-║                                      │                                       ║
-║   ► ATAboy Features Setup            │     Auto Detect & Set Geometry        ║
-║                                      │                                       ║
-║     Mount HDD to USB Mass Storage    │     Load Setup Defaults               ║
-║                                      │                                       ║
-║     Send RESET to HDD                │     Save Setup to EEPROM              ║
-║                                      │                                       ║
-║                                      │                                       ║
-║                                      │                                       ║
-║                                      │                                       ║
-║                                      │                                       ║
-║                                      │                                       ║
-║                                      │                                       ║
-╟──────────────────────────────────────┴───────────────────────────────────────╢
-║  ESC: Quit to Main Menu                         ↑ ↓ → ←: Select Item         ║
-║  F10: Save Current Setup to EEPROM               Enter: Select               ║
-╟──────────────────────────────────────────────────────────────────────────────╢
-║                         Current HDD: IBM-H2344-A4                            ║
-║                 Current Geometry: 915 Cyl / 15 Hd / 49 SPT                   ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-
-```
+![image](https://github.com/redruM0381/ATAboy/blob/main/logo.png)
 
 ATAboy exposes a USB serial console UI used to configure the drive, change system settings, mount the drive, etc.
 After connecting ATAboy via USB, first find the new serial port:
@@ -133,6 +107,7 @@ ATAboy is a hobbyist and experimental project. You should be aware that:
 
 ATAboy is meant to be hacked, learned from, and improved.
 Have fun, and thank you for trying ATAboy!
+
 
 
 
