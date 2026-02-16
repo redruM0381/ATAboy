@@ -4,9 +4,14 @@ It currently contains IPC re-entry, and other bugs that could cause crashes unde
 It does function for the most part, but can be buggy and slow.
 It is also incomplete, and some functionality is not yet enabled (e.g. IORDY/IRQ pins, etc)
 Use at your own risk!
+
+Firmware written in VS Code with Raspberry Pi Pico Extension
+PCB designed in Kicad
+Case designed in Freecad
+
 -----------------------------------------------------------------------------------
 
-![image](https://github.com/redruM0381/ATAboy/blob/main/test2.png)
+![image](https://github.com/redruM0381/ATAboy/blob/main/logo.png)
 
 
 ATAboy is designed for retro computing enthusiasts, data recovery experts, and archivists.  Read and write the oldest of IDE hard drives, without the need for an "in-between" vintage computer!
@@ -34,19 +39,20 @@ To get started, you will also need:
 
 ---
 
-## Connecting a Drive
+## Connecting a Drive to ATABoy
 
 1. Power off everything
 2. Connect the IDE ribbon cable to the drive and ATAboy (Note Pin 1 orientation, usually marked by a stripe on the cable)
 3. Power on the IDE drive
 4. Connect ATAboy to your computer via USB
+5. Connect to serial console with terminal of choice (more below)
 
 ---
 
 ## Serial Console Access
 
 ```
-         ATAboy Setup Utility V 0.4 - Copyright (C) 2026 Obsolete Tech
+         ATAboy Setup Utility V 0.5 - Copyright (C) 2026 Obsolete Tech
 ╔══════════════════════════════════════╤═══════════════════════════════════════╗
 ║                                      │                                       ║
 ║                                      │                                       ║
@@ -127,6 +133,7 @@ ATAboy is a hobbyist and experimental project. You should be aware that:
 
 ATAboy is meant to be hacked, learned from, and improved.
 Have fun, and thank you for trying ATAboy!
+
 
 
 
