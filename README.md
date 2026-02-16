@@ -1,4 +1,4 @@
-PLEASE NOTE!
+# PLEASE NOTE!
 Most of this "proof of concept" firmware code was written with AI assistance.  It's a mess.
 
 It currently contains IPC re-entry, and other bugs that could cause crashes under certain circumtstances.
@@ -116,6 +116,7 @@ ATAboy is a hobbyist and experimental project. You should be aware that:
 
 ATAboy is meant to be hacked, learned from, and improved.
 Have fun, and thank you for trying ATAboy!
+
 
 
 
