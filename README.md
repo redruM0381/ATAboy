@@ -39,13 +39,16 @@ To get started, you will also need:
 
 ---
 
-## Connecting a Drive to ATABoy
+## Basic drive mount using ATABoy
 
-1. Power off everything
-2. Connect the IDE ribbon cable to the drive and ATAboy (Note Pin 1 orientation, usually marked by a stripe on the cable)
-3. Power on the IDE drive
-4. Connect ATAboy to your computer via USB
-5. Connect to serial console with terminal of choice (PuTTY shown)
+1. Connect the IDE ribbon cable to the drive and ATAboy (Note Pin 1 orientation, usually marked by a stripe on the cable)
+2. Power the drive using external supply
+3. Connect ATAboy to your computer via USB
+4. Connect to serial console with terminal of choice (PuTTY shown)
+5. Enter the "Auto Detect & Set Geometry" menu
+6. Choose default, or enter geometry manually if needed
+7. Choose "Mount HDD to USB Mass Storage"
+8. That's it!  You can now read the drive from your modern OS!
 
 ---
 
@@ -107,6 +110,7 @@ ATAboy is a hobbyist and experimental project. You should be aware that:
 
 ATAboy is meant to be hacked, learned from, and improved.
 Have fun, and thank you for trying ATAboy!
+
 
 
 
