@@ -121,7 +121,8 @@ See /firmware/LICENSE.
 
 ## Hardware
 Licensed under CERN-OHL-W v2.
-See /hardware/LICENSE.
+See /PCB/LICENSE.
+
 
 
 
