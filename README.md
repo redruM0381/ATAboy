@@ -115,6 +115,9 @@ Have fun, and thank you for trying ATAboy!
 
 # Licensing
 
+"ATAboy" is a trademark of JJ Dasher.
+The open source licenses do not grant rights to use these trademarks.
+
 ## Firmware
 Licensed under GNU GPLv3.
 See /firmware/LICENSE.
@@ -122,6 +125,7 @@ See /firmware/LICENSE.
 ## Hardware
 Licensed under CERN-OHL-W v2.
 See /PCB/LICENSE.
+
 
 
 
