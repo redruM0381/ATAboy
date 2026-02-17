@@ -1,3 +1,14 @@
+//
+// ATAboy Firmware
+// Copyright (c) 2026 JJ Dasher
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License v3.0.
+//
+// See the LICENSE file in this directory for details.
+//
+
+
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -1234,3 +1245,4 @@ int main() {
         tud_task(); 
     }
 }
+
