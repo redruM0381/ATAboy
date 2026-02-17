@@ -1,0 +1,8 @@
+ATAboy Hardware Design
+Licensed under CERN-OHL-W v2.
+
+Source location:
+https://github.com/redruM0381/ATAboy
+
+As per CERN-OHL-W v2, you must provide source for
+modified versions of this design when distributing products.
