@@ -1,3 +1,13 @@
+//
+// ATAboy Firmware
+// Copyright (c) 2026 JJ Dasher
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License v3.0.
+//
+// See the LICENSE file in this directory for details.
+//
+
 #include "tusb.h"
 
 /* A combination of interfaces must have a unique product id, since PC will save device driver after the first plug. */
@@ -99,3 +109,4 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
     _desc_str[0] = (TUSB_DESC_STRING << 8) | (2*chr_count + 2);
     return _desc_str;
 }
+
