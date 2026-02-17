@@ -113,6 +113,18 @@ Have fun, and thank you for trying ATAboy!
 
 
 
+# Licensing
+
+## Firmware
+Licensed under GNU GPLv3.
+See /firmware/LICENSE.
+
+## Hardware
+Licensed under CERN-OHL-W v2.
+See /hardware/LICENSE.
+
+
+
 
 
 
