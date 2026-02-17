@@ -1,3 +1,14 @@
+#
+# ATAboy Firmware
+# Copyright (c) 2026 JJ Dasher
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License v3.0.
+#
+# See the LICENSE file in this directory for details.
+#
+
+
 # Generated Cmake Pico project file
 
 cmake_minimum_required(VERSION 3.13)
@@ -70,4 +81,5 @@ target_link_libraries(ATAboy
         )
 
 pico_add_extra_outputs(ATAboy)
+
 
