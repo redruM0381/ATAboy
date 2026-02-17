@@ -1,3 +1,14 @@
+//
+// ATAboy Firmware
+// Copyright (c) 2026 JJ Dasher
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License v3.0.
+//
+// See the LICENSE file in this directory for details.
+//
+
+
 #include "ide_logic.h" 
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
@@ -766,3 +777,4 @@ int32_t ide_read_cached(uint32_t lba, uint32_t count, uint8_t* buffer) {
 }
 
 } // End extern "C"
+
