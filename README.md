@@ -1,17 +1,6 @@
 If you don't want to build your own, the hardware can be purchased here:  https://obsoletetech.us/products/ataboy-an-open-source-legacy-ide-usb-bridge
 
 
-# PLEASE NOTE!
-Some of this firmware code was written with AI assistance.
-It currently contains an IPC re-entry, and possibly other bugs that could cause the RP2350 to crash under certain circumtstances.
-It has been tested with dozens of drives, and does function, but may be buggy and slow.
-Some lesser functionality is not yet enabled (e.g. IORDY/IRQ pins, etc)
-# Use at your own risk!
-
-* Firmware written in VS Code with Raspberry Pi Pico Extension
-* PCB designed in Kicad
-* Case designed in Freecad
-
 -----------------------------------------------------------------------------------
 
 ![image](https://github.com/redruM0381/ATAboy/blob/main/logo.png)
@@ -109,6 +98,18 @@ ATAboy is a hobbyist and experimental project. You should be aware that:
 * Many legacy disks use unusual geometry, and may require experimentation.
 * Not all OS disk utilities behave the same way
 
+  
+# PLEASE NOTE!
+Some of this firmware code was written with AI assistance.
+It currently contains an IPC re-entry, and possibly other bugs that could cause the RP2350 to crash under certain circumtstances.
+It has been tested with dozens of drives, and does function, but may be buggy and slow.
+Some lesser functionality is not yet enabled (e.g. IORDY/IRQ pins, etc)
+# Use at your own risk!
+
+* Firmware written in VS Code with Raspberry Pi Pico Extension
+* PCB designed in Kicad
+* Case designed in Freecad
+
 ---
 
 ATAboy is meant to be hacked, learned from, and improved.
@@ -128,6 +129,7 @@ See /firmware/LICENSE.
 ## Hardware
 Licensed under CERN-OHL-W v2.
 See /PCB/LICENSE.
+
 
 
 
