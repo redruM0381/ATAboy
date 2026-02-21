@@ -1,3 +1,6 @@
+If you don't want to build your own, the hardware can be purchased here:  https://obsoletetech.us/products/ataboy-an-open-source-legacy-ide-usb-bridge
+
+
 # PLEASE NOTE!
 Some of this firmware code was written with AI assistance.
 It currently contains an IPC re-entry, and possibly other bugs that could cause the RP2350 to crash under certain circumtstances.
@@ -125,6 +128,7 @@ See /firmware/LICENSE.
 ## Hardware
 Licensed under CERN-OHL-W v2.
 See /PCB/LICENSE.
+
 
 
 
