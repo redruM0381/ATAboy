@@ -1,8 +1,8 @@
 # PLEASE NOTE!
-Most of this "proof of concept" firmware code was written with AI assistance.  It's a mess.
-It currently contains IPC re-entry, and other bugs that could cause crashes under certain circumtstances.
-It does function for the most part, but can be buggy and slow.
-It is also incomplete, and some functionality is not yet enabled (e.g. IORDY/IRQ pins, etc)
+Some of this firmware code was written with AI assistance.
+It currently contains an IPC re-entry, and possibly other bugs that could cause the RP2350 to crash under certain circumtstances.
+It has been tested with dozens of drives, and does function, but may be buggy and slow.
+Some lesser functionality is not yet enabled (e.g. IORDY/IRQ pins, etc)
 # Use at your own risk!
 
 * Firmware written in VS Code with Raspberry Pi Pico Extension
@@ -125,6 +125,7 @@ See /firmware/LICENSE.
 ## Hardware
 Licensed under CERN-OHL-W v2.
 See /PCB/LICENSE.
+
 
 
 
