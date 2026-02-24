@@ -36,42 +36,23 @@ To get started, you will also need:
 1. Connect the IDE ribbon cable to the drive and ATAboy (Note Pin 1 orientation, usually marked by a stripe on the cable)
 2. Power the drive using external supply
 3. Connect ATAboy to your computer via USB
-4. Connect to serial console with terminal of choice ([PuTTY](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) shown)
+4. Connect to serial console with terminal of choice ([PuTTY](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) shown).  9600 8N1, no flow control.  You should see an Award BIOS "inspired" text-based UI appear in the terminal.
 5. Enter the "Auto Detect & Set Geometry" menu
 6. Choose default, or enter geometry manually if needed
 7. Choose "Mount HDD to USB Mass Storage"
 8. That's it!  You can now read the drive from your modern OS!
 
----
 
-## Serial Console Access
+---
 
 ![image](https://github.com/redruM0381/ATAboy/blob/main/putty.png)
 
-ATAboy exposes a USB serial console UI used to configure the drive, change system settings, mount the drive, etc.
-After connecting ATAboy via USB, first find the new serial port:
+You can save the current ATAboy settings, geometry, etc to EEPROM, which will be restored the next time the device is booted.  (This allows auto-mounting also.)
 
-Windows:
-Open Device Manager → Ports (COM & LPT) and look for a new USB Serial Device (COMx).
-
-Linux:
-The device will typically appear as /dev/ttyACM0 or /dev/ttyUSB0.
-You can list ports with:
-ls /dev/ttyACM* /dev/ttyUSB*
-
-macOS:
-Look for a device named like /dev/tty.usbmodemXXXX or /dev/tty.usbserialXXXX.
-
-Once we know the serial port, Connect to it with a Terminal Emulator with settings: 9600 8N1, no flow control.
-You should see an "Award BIOS inspired" text-based UI appear in the terminal.
-From here, it is mostly self explanitory.  Enter the auto-detection and geometry menu to set the drive's geometry as it was originally formatted (this may require experimentation if you don't know).
-Once geometry is set, you may mount the drive, and it should appear in your host OS.
-If you like, you can save the current settings and geometry to EEPROM, which will be restored the next time the device is connected.  (This allows auto-mounting also.)
-
-IMPORTANT!  If you are working with valuable or irreplaceable data, enable write protection before mounting.  It is enabled by default for safety.  You do NOT want the host OS to touch or bless the disk!
+IMPORTANT!  If you are working with valuable or irreplaceable data, ensure write protection is enabled before mounting.  It is enabled by default for safety.  You do NOT want the host OS to touch or bless the disk!
 Windows VDS/RPC services can often crash if it is unable to write to a drive with damaged/legacy MBR and/or partition tables.
 This can result in various Windows errors, unable to mount the drive, etc.  However, raw data can usually still be accessed via dd, or other raw disk backup software.
-Regardless, it is STRONGLY recommended the entire drive be dumped to an image file BEFORE disabling write protection, and mounting the drive in Explorer.
+Regardless, it is STRONGLY recommended the entire drive be dumped to an image file BEFORE disabling write protection, then mounting the drive in Explorer.
 
 ---
 
@@ -129,6 +110,7 @@ See /firmware/LICENSE.
 ## Hardware
 Licensed under CERN-OHL-W v2.
 See /PCB/LICENSE.
+
 
 
 
