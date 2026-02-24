@@ -36,7 +36,7 @@ To get started, you will also need:
 1. Connect the IDE ribbon cable to the drive and ATAboy (Note Pin 1 orientation, usually marked by a stripe on the cable)
 2. Power the drive using external supply
 3. Connect ATAboy to your computer via USB
-4. Connect to serial console with terminal of choice (PuTTY shown)
+4. Connect to serial console with terminal of choice ([PuTTY](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) shown)
 5. Enter the "Auto Detect & Set Geometry" menu
 6. Choose default, or enter geometry manually if needed
 7. Choose "Mount HDD to USB Mass Storage"
@@ -129,6 +129,7 @@ See /firmware/LICENSE.
 ## Hardware
 Licensed under CERN-OHL-W v2.
 See /PCB/LICENSE.
+
 
 
 
