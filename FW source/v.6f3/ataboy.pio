@@ -1,0 +1,72 @@
+;
+; ATAboy PIO Programs - IDE Bus Strobe Timing
+;
+; Two programs handle DIOR (read) and DIOW (write) strobes with precise,
+; deterministic timing.  C code manages address, chip-select, and bus
+; transceiver direction/enable before triggering these programs.
+;
+; PIO clock target: 10 MHz (100 ns/cycle) for ATA PIO Mode 0.
+;
+; Timing analysis (Mode 0 minimums in parentheses):
+;
+;   READ:
+;     DIOR pulse width  : 400 ns  (165 ns min)
+;     Recovery          : 300 ns  (215 ns min)
+;     Cycle time        : 700 ns  (600 ns min)
+;
+;   WRITE:
+;     Data setup        : 100 ns  ( 60 ns min)
+;     DIOW pulse width  : 300 ns  (165 ns min)
+;     Recovery          : 300 ns  (215 ns min)
+;     Cycle time        : 800 ns  (600 ns min)
+;
+
+; ============================================================
+;  ide_read - burst DIOR strobe, pushes 16-bit words to RX FIFO
+; ============================================================
+; Side-set : GPIO 26 (DIOR), active-low, idles HIGH
+; In pins  : GPIO 0-15 (data bus)
+; TX FIFO  : push (count - 1) to start
+; RX FIFO  : receives one 16-bit word per strobe
+; Autopush : enabled, threshold 16
+
+.program ide_read
+.side_set 1
+
+.wrap_target
+    pull block          side 1      ; get count-1, DIOR idle HIGH
+    mov y, osr          side 1
+
+read_loop:
+    nop                 side 0 [1]  ; assert DIOR  (200 ns setup)
+    wait 1 gpio 29      side 0      ; IORDY hold   (extends pulse if needed)
+    in pins, 16         side 0      ; sample data   (DIOR still LOW)
+    nop                 side 1 [1]  ; deassert DIOR (200 ns recovery)
+    jmp y-- read_loop   side 1      ; loop or fall through
+    irq wait 0 rel      side 1      ; signal done, wait for C to ack
+.wrap
+
+
+; ============================================================
+;  ide_write - burst DIOW strobe, pulls 16-bit words from TX FIFO
+; ============================================================
+; Side-set : GPIO 27 (DIOW), active-low, idles HIGH
+; Out pins : GPIO 0-15 (data bus)
+; TX FIFO  : push (count - 1), then one data word per strobe
+
+.program ide_write
+.side_set 1
+
+.wrap_target
+    pull block          side 1      ; get count-1, DIOW idle HIGH
+    mov y, osr          side 1
+
+write_loop:
+    pull block          side 1      ; get data word
+    out pins, 16        side 1      ; data on bus   (100 ns setup)
+    nop                 side 0 [1]  ; assert DIOW   (200 ns pulse)
+    wait 1 gpio 29      side 0      ; IORDY hold
+    nop                 side 1 [1]  ; deassert DIOW (200 ns recovery)
+    jmp y-- write_loop  side 1      ; loop or fall through
+    irq wait 0 rel      side 1      ; signal done, wait for C to ack
+.wrap
