@@ -1,0 +1,257 @@
+==============================================================================
+  ATAboy Setup Utility - User Guide
+  Copyright (C) 2026 obsoletetech.us
+  https://github.com/redruM0381/ATAboy
+==============================================================================
+
+ATAboy is a user-friendly bridge that allows classic IDE (PATA) hard drives 
+to be connected to a modern computer over USB as a standard USB Mass Storage 
+device. While cheap, modern adapters usually only work with newer "LBA" type 
+drives, ATAboy works all the way back to the earliest CHS only, PIO Mode 0, 
+ATA disks. (It will also work with newer LBA type IDE disks, but that's not 
+really what it's designed for.) ATAboy features an "Award BIOS inspired" 
+user friendly UI for drive configuration and setup.
+
+
+==============================================================================
+  GETTING STARTED
+==============================================================================
+
+  1. Connect an IDE hard drive to the 40-pin header on ATAboy.
+  2. Ensure the drive has power (usually a 4-pin Molex connector).
+  3. Connect ATAboy to your computer via USB.
+  4. Two devices will appear:
+     - A USB Mass Storage device (the drive, once mounted)
+     - A USB CDC serial port (the setup terminal)
+  5. Open a serial terminal (PuTTY, Tera Term, etc.) on the CDC port.
+     The BIOS-style setup screen will appear.
+
+
+==============================================================================
+  MAIN MENU
+==============================================================================
+
+  The main screen has five options.  Navigate with arrow keys, and Enter 
+  to select.
+
+
+  AUTO DETECT & SET GEOMETRY
+    Resets the IDE bus, probes for a drive (Master then Slave), runs
+    IDENTIFY DEVICE, and presents geometry options. This is the first
+    thing you should do after connecting a drive.
+
+  MOUNT HDD TO USB MASS STORAGE
+    Makes the drive accessible to your computer over USB. Requires a
+    successful detection and geometry selection first.
+
+  ATABOY FEATURES SETUP
+    Opens the settings menu (Write Protect, Auto Mount, IORDY, INTRQ,
+    Debug Mode).
+
+  LOAD SETUP DEFAULTS
+    Resets all settings to factory defaults and saves to EEPROM.
+
+  SAVE SETUP TO EEPROM
+    Saves the current configuration (geometry, features, device) to
+    non-volatile storage. Settings persist across power cycles.
+    Also accessible with F10 from any screen.
+
+
+==============================================================================
+  AUTO DETECT & GEOMETRY SELECTION
+==============================================================================
+
+  When you select Auto Detect, ATAboy:
+
+  1. Sends a hardware reset to the IDE bus.
+  2. Probes for a device at the Master address (0xA0), then Slave (0xB0).
+  3. Runs the ATA IDENTIFY DEVICE command.
+  4. If successful, displays the geometry selection screen.
+
+  The geometry screen shows four options:
+
+  NORMAL    Native CHS geometry reported by the drive. Use for legacy
+            systems or drives under 504 MB.
+
+  LARGE     Translated CHS geometry that works around the 1024-cylinder
+            BIOS limit. Use for drives between 504 MB and 8 GB on older
+            systems.
+
+  LBA       Logical Block Addressing. Recommended for any drive that
+            supports it.  Supports up to 128 GB (LBA28) or 2 TB (LBA48). 
+
+  MANUAL    Enter cylinder, head, and sector-per-track values by hand.
+            Use when you know the geometry from another source (e.g., a
+            sticker on the drive or documentation).  Also useful if the 
+            drive was formatted with different geometry in the past.
+
+  Use Up/Down arrows to select a mode. Press Enter to apply.
+  Press Tab to jump to Manual entry mode.
+
+  After selecting a geometry, the main screen updates to show the drive
+  model and geometry. You can now mount the drive via "Mount HDD to USB Mass 
+  Storage"
+
+  IMPORTANT: Safely eject the USB drive from your operating system before
+  unmounting in ATAboy, to avoid data loss.
+
+
+==============================================================================
+  FEATURES MENU
+==============================================================================
+
+  Access from Main Menu > ATAboy Features Setup.
+
+  WRITE PROTECT          [Enabled/Disabled]
+    Prevents any write commands from reaching the drive. Enable this to
+    safely browse a drive without risk of accidental modification.  
+    NOTE: Operating systems occasionally require writes to mount, if the 
+    partition table isnt quite right.
+    
+  AUTO MOUNT AT START    [Enabled/Disabled]
+    When enabled, ATAboy automatically mounts the drive on power-up using
+    the saved geometry. No terminal interaction needed. Requires that you
+    have previously detected the drive and saved settings to EEPROM.
+
+  IORDY                  [Enabled/Disabled]
+    Enables hardware IORDY flow control on the IDE bus. Some drives
+    require this; others work better without it. Try toggling if you
+    experience read/write issues. Default: Disabled.
+
+  INTRQ                  [Enabled/Disabled]
+    Enables hardware interrupt signaling for faster IDE command completion.
+    May improve throughput on some drives. Default: Disabled.
+
+  DEBUG MODE
+    Opens the low-level diagnostics screen (see Debug Mode section).
+
+  Toggle settings with Enter. Press Esc to return to the main menu.
+
+
+==============================================================================
+  DEBUG MODE
+==============================================================================
+
+  Access from Features Menu > Debug Mode.
+
+  The debug overlay provides low-level drive diagnostics:
+
+  Key   Function
+  ---   --------
+  I     IDENTIFY DEVICE - Reads and displays the drive's model, serial
+        number, firmware revision, CHS geometry, LBA support, LBA48
+        support, total capacity, DMA/PIO modes, and ATA version.
+
+  T     TASK FILE - Displays the current contents of all IDE registers:
+        ERR (error), SEC (sector count), SN (sector number),
+        CL (cylinder low), CH (cylinder high), DH (device/head),
+        ST (status).
+
+  E     ERROR BITS - Decodes the error register into individual flags:
+        BBK (Bad Block), UNC (Uncorrectable), MC (Media Changed),
+        IDNF (ID Not Found), MCR (Media Change Requested),
+        ABRT (Aborted), TK0 (Track 0 Not Found), AMNF (Address Mark
+        Not Found).
+
+  S     SEEK TEST - Animated seek test that moves the drive head across
+        the disk in a sine wave pattern.  Press Esc to stop.
+
+  R     RESET DRIVE - Sends a hardware reset and waits up to 5 seconds
+        for the drive to become ready.
+
+  ESC   Return to the Features menu.
+
+
+==============================================================================
+  FORCE DETECT
+==============================================================================
+
+  Certain early drives respond to the hardware reset, but fail the IDENTIFY 
+  DEVICE command. When this happens, the error dialog shows two options:
+
+    [OK]          Dismiss the error and return to the main menu.
+    [F: Force]    Bypass IDENTIFY and enter geometry manually.
+
+  Press F to force. The geometry screen opens with only the MANUAL option
+  available (Normal, Large, and LBA are grayed out since there is no
+  IDENTIFY data). Enter the correct CHS values and the drive can be
+  mounted normally.
+
+  The drive model will display as "Manually Forced Drive".  If no drive is 
+  detected at all (no device on the bus), the Force option does not appear.
+
+
+==============================================================================
+  MASTER / SLAVE DRIVES
+==============================================================================
+
+  ATAboy automatically detects whether your drive is jumpered as Master
+  or Slave. Manual jumper configuration is usually not needed.  During 
+  Auto Detect, it probes the Master address first, then Slave.
+
+  The detected Master/Slave setting can be saved in config, for use with
+  Auto Mount.
+
+
+==============================================================================
+  SAVING SETTINGS
+==============================================================================
+
+  ATAboy stores settings in non-volatile EEPROM on the RP2350. Settings
+  include: geometry, LBA mode, device (Master/Slave), write protect,
+  auto mount, IORDY, and INTRQ.
+
+  To save:
+    Press F10 from any screen, or select "Save Setup to EEPROM" from
+    the main menu.
+
+  To restore defaults:
+    Select "Load Setup Defaults" from the main menu. This resets all
+    settings and saves immediately.
+
+  Settings are loaded automatically on power-up. If Auto Mount is
+  enabled, the drive mounts without terminal interaction.
+
+
+==============================================================================
+  TROUBLESHOOTING
+==============================================================================
+
+  DRIVE NOT DETECTED
+    - Verify the IDE cable is fully seated on both ends.
+    - Ensure the drive has power and is spinning up.
+    - Try a different Master/Slave jumper setting.
+    - Some very old drives are slow to initialize. Try Auto Detect again
+      after a few seconds.
+    - Toggle IORDY and/or INTRQ in the Features menu.
+
+  DRIVE MOUNTS BUT WINDOWS HANGS OR SHOWS ERRORS
+    - If the drive is larger than 128 GB, ensure LBA (not CHS) mode is
+      selected. LBA48 is required for drives over 128 GB.
+    - The drive may have bad sectors. Try on a different computer or
+      with disk recovery software.
+    - Toggle IORDY and/or INTRQ in the Features menu.
+
+  AUTO MOUNT DOES NOT WORK
+    - Ensure Auto Mount is enabled in the Features menu.
+    - Ensure you have saved valid geometry to EEPROM (F10).
+    - The drive must be connected and powered before ATAboy boots.
+
+  DRIVE MAKES REPEATED CLICKING OR SEEKING NOISES AFTER MOUNT
+    - The drive may have bad sectors causing retries.
+    - Verify the correct geometry is set (wrong CHS causes out-of-bounds
+      seeks).
+    - Try a soft reset: Debug Mode > Reset (R), then remount.
+
+  POOR PERFORMANCE
+    - This is generally expected.  ATAboy only supports USB 1.1 at this time
+      sequential transfers are usually around 170-700KB/sec, depending on 
+      the drive.
+
+  TERMINAL DISPLAY IS GARBLED
+    - Use a terminal that supports VT100/ANSI escape codes.
+    - Set the terminal to 80 columns x 24 rows minimum.
+    - Ensure the baud rate is not limiting throughput (USB CDC has no
+      baud rate setting, but some terminals may buffer differently).
+
+==============================================================================
