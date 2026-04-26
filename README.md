@@ -24,7 +24,7 @@ When connected:
 
 To get started, you will also need:
 
-* Any 40‑pin IDE (PATA) hard drive with jumpers set for MASTER/SINGLE only!
+* Any 40‑pin IDE (PATA) hard drive. It may be jumpered master, slave, or cable select.
 * An external PSU to power the drive.
 * A USB-C cable to connect ATAboy to the host computer.
 * Any standard ANSI compatible serial terminal emulator (e.g. PuTTY, Tera Term, minicom, screen, etc.)
@@ -81,10 +81,7 @@ ATAboy is a hobbyist and experimental project. You should be aware that:
 
   
 # PLEASE NOTE!
-Some of this firmware code was written with AI assistance.
-It currently contains an IPC re-entry, and possibly other bugs that could cause the RP2350 to crash under certain circumtstances.
-It has been tested with dozens of drives, and does function, but may be buggy and slow.
-Some lesser functionality is not yet enabled (e.g. IORDY/IRQ pins, etc)
+Some of the firmware code was written with AI assistance.  It has been tested with dozens of drives, and does function well with most.  But may be buggy, slow, or unresponsive with certain drives. Please let us know if you find a drive that does or doesn't work right. We'll build a compatibilty list soon.
 # Use at your own risk!
 
 * Firmware written in VS Code with Raspberry Pi Pico Extension
